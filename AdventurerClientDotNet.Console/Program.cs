@@ -38,26 +38,74 @@ namespace FlashForgeFileTransfer
                 Console.WriteLine("Select command");
                 Console.WriteLine("e: Track endstop status");
                 Console.WriteLine("t: Track temperature");
+                Console.WriteLine("l: Set LED");
+                Console.WriteLine("a: Move Extruder");
                 Console.WriteLine("p: Print a file");
 
                 var command = Console.ReadKey();
-                if (command.Key == ConsoleKey.E)
+                switch(command.Key)
                 {
-                    TrackEndstopStatus();
-                }
-                else if (command.Key == ConsoleKey.T)
-                {
-                    TrackTemperature();
-                }
-                else if (command.Key == ConsoleKey.P)
-                {
-                    PrintFile();
-                }
-                else
-                {
-                    Console.WriteLine("Unknown command");
+                    case ConsoleKey.E:
+                        TrackEndstopStatus();
+                        break;
+                    case ConsoleKey.T:
+                        TrackTemperature();
+                        break;
+                    case ConsoleKey.P:
+                        PrintFile();
+                        break;
+                    case ConsoleKey.L:
+                        SetPrinterLed();
+                        break;
+                    case ConsoleKey.A:
+                        ChangeAxis();
+                        break;
+                    default:
+                        Console.WriteLine("Unknown Command");
+                        break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Changes LED status to ON or OFF.
+        /// </summary>
+        private static void SetPrinterLed()
+        {
+            Console.WriteLine("Enter ON(1) or OFF(2)");
+            var status = Console.ReadLine();
+            Boolean sta = (status == "1");
+
+            Console.WriteLine("Connecting to printer...");
+            using var printer = new Printer(printerIp);
+            printer.Connect();
+            Console.WriteLine("...Connected");
+            printer.SetPrinterLed(sta);
+            Console.WriteLine("Done");
+
+        }
+
+        /// <summary>
+        /// Manually Changes axis
+        /// </summary>
+        private static void ChangeAxis()
+        {
+            Console.WriteLine("Enter Axis to Change");
+            var axis = Console.ReadLine();
+
+            Console.WriteLine("Enter Steps to move");
+            var steps = Console.ReadLine();
+
+            Console.WriteLine("Enter movement speed");
+            var speed = Console.ReadLine();
+
+            Console.WriteLine("Connecting to printer...");
+            using var printer = new Printer(printerIp);
+            printer.Connect();
+            Console.WriteLine("...Connected");
+            printer.ChangeAxis(axis, steps, speed);
+            Console.WriteLine("Done");
+
         }
 
         /// <summary>
@@ -77,23 +125,21 @@ namespace FlashForgeFileTransfer
             }
 
             Console.WriteLine("Connecting to printer...");
-            using (var printer = new Printer(printerIp))
-            {
-                printer.Connect();
-                Console.WriteLine("...Connected");
+            using var printer = new Printer(printerIp);
+            printer.Connect();
+            Console.WriteLine("...Connected");
 
-                // Generate the file name for the printer by changing the extension to .g, as
-                // it does not support Cura's .gcode files.
-                var fileName = Path.GetFileNameWithoutExtension(modelPath) + ".g";
+            // Generate the file name for the printer by changing the extension to .g, as
+            // it does not support Cura's .gcode files.
+            var fileName = Path.GetFileNameWithoutExtension(modelPath) + ".g";
 
-                Console.WriteLine("Streaming file to printer...");
-                printer.StoreFile(modelPath, fileName);
-                Console.WriteLine("Done");
+            Console.WriteLine("Streaming file to printer...");
+            printer.StoreFile(modelPath, fileName);
+            Console.WriteLine("Done");
 
-                Console.WriteLine("Printing file");
-                printer.PrintFile(fileName);
-                Console.WriteLine("Print started");
-            }
+            Console.WriteLine("Printing file");
+            printer.PrintFile(fileName);
+            Console.WriteLine("Print started");
         }
 
         /// <summary>
@@ -102,24 +148,22 @@ namespace FlashForgeFileTransfer
         private static void TrackEndstopStatus()
         {
             Console.WriteLine("Connecting to printer...");
-            using (var printer = new Printer(printerIp))
+            using var printer = new Printer(printerIp);
+            printer.Connect();
+            Console.WriteLine("...Connected");
+            Console.WriteLine("Tracking status. Press q to stop");
+
+            while (true)
             {
-                printer.Connect();
-                Console.WriteLine("...Connected");
-                Console.WriteLine("Tracking status. Press q to stop");
+                var status = printer.GetPrinterStatus();
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Machine Status:{0}", status.MachineStatus));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Move Mode:{0}", status.MoveMode));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Endstop: x={0} y={1} z={2}", status.Endstop.X, status.Endstop.Y, status.Endstop.Z));
 
-                while  (true)
+                Thread.Sleep(1000);
+                if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Q)
                 {
-                    var status = printer.GetPrinterStatus();
-                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Machine Status:{0}", status.MachineStatus));
-                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Move Mode:{0}", status.MoveMode));
-                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Endstop: x={0} y={1} z={2}", status.Endstop.X, status.Endstop.Y, status.Endstop.Z));
-
-                    Thread.Sleep(1000);
-                    if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Q)
-                    {
-                        return;
-                    }
+                    return;
                 }
             }
         }
@@ -130,23 +174,21 @@ namespace FlashForgeFileTransfer
         private static void TrackTemperature()
         {
             Console.WriteLine("Connecting to printer...");
-            using (var printer = new Printer(printerIp))
+            using var printer = new Printer(printerIp);
+            printer.Connect();
+            Console.WriteLine("...Connected");
+            Console.WriteLine("Tracking status. Press q to stop");
+
+            while (true)
             {
-                printer.Connect();
-                Console.WriteLine("...Connected");
-                Console.WriteLine("Tracking status. Press q to stop");
+                var temp = printer.GetPrinterTemperature();
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Extruder: {0}", temp.ExtruderTemperature));
+                Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Build Plate: {0}", temp.BuildPlateTemperature));
 
-                while (true)
+                Thread.Sleep(1000);
+                if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Q)
                 {
-                    var temp = printer.GetPrinterTemperature();
-                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Extruder: {0}", temp.ExtruderTemperature));
-                    Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "Build Plate: {0}", temp.BuildPlateTemperature));
-
-                    Thread.Sleep(1000);
-                    if (Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Q)
-                    {
-                        return;
-                    }
+                    return;
                 }
             }
         }

@@ -132,6 +132,14 @@ namespace AdventurerClientDotNet.Core
                 case MachineCommands.GetTemperature:
                     return new PrinterTemperature(data);
 
+                case MachineCommands.ChangeLed:
+                    return null;
+
+                case MachineCommands.StartAxisChange:
+                case MachineCommands.SendAxisCommands:
+                case MachineCommands.EndAxisChange:
+                    return null;
+
                 case MachineCommands.BeginWriteToSdCard:
                 case MachineCommands.EndWriteToSdCard:
                 case MachineCommands.PrintFileFromSd:

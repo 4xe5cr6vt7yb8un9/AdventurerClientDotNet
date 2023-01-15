@@ -108,6 +108,37 @@ namespace AdventurerClientDotNet.Core
         }
 
         /// <summary>
+        /// Manually changes the axis of the extruder and build plate
+        /// </summary>
+        /// <param Axis="axis" steps="steps" speed="speed">
+        /// Axis to change, amount of steps, and speed.
+        /// </param>
+        public void ChangeAxis(String axis, String steps, String speed)
+        {
+            this.ChangeAxisAsync(axis, steps, speed).Wait();
+        }
+
+        /// <summary>
+        /// Manually changes the axis of the extruder and build plate
+        /// </summary>
+        public async Task ChangeAxisAsync(String axis, String steps, String speed)
+        {
+            this.ValidatePrinterReady();
+
+            // Begins command to change axis
+            this.streamWriter.WriteLine(string.Format(CultureInfo.InvariantCulture, "~{0}", MachineCommands.StartAxisChange));
+            await this.WaitForPrinterAck().ConfigureAwait(false);
+
+            // Send movement command
+            this.streamWriter.WriteLine(string.Format(CultureInfo.InvariantCulture, "~{0} {1}{2} F{3}", MachineCommands.SendAxisCommands, axis, steps, speed));
+            await this.WaitForPrinterAck();
+
+            // End Command to change axis
+            this.streamWriter.WriteLine(string.Format(CultureInfo.InvariantCulture, "~{0}", MachineCommands.EndAxisChange));
+            await this.WaitForPrinterAck();
+        }
+
+        /// <summary>
         /// Gets the current status of the printer.
         /// </summary>
         /// <returns>
@@ -161,6 +192,43 @@ namespace AdventurerClientDotNet.Core
 
             // Get its answer
             return await this.responseReader.GerPrinterResponce<PrinterTemperature>().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Sets the built-in LED to on or off.
+        /// </summary>
+        /// <param status="LED">
+        /// Takes in a boolean to turn on or off theLED.
+        /// </param>
+        public void SetPrinterLed(Boolean LED)
+        {
+            this.SetPrinterLedAsync(LED).Wait();
+        }
+
+        /// <summary>
+        /// Sets the built-in LED to on or off.
+        /// </summary>
+        /// <param status="LED">
+        /// Takes in a boolean to turn on or off theLED.
+        /// </param>
+        public async Task SetPrinterLedAsync(Boolean LED)
+        {
+            this.ValidatePrinterReady();
+            String LedCom;
+
+            // Send command to printer
+            if (LED)
+            {
+                LedCom = "r255 g255 b255 F0";
+            } else
+            {
+                LedCom = "r0 g0 b255 F0";
+            }
+
+            await this.streamWriter.WriteAsync(string.Format(CultureInfo.InvariantCulture, "~{0} "+LedCom, MachineCommands.ChangeLed)).ConfigureAwait(false);
+
+            // Get its answer
+            await this.WaitForPrinterAck().ConfigureAwait(false);
         }
 
         /// <summary>

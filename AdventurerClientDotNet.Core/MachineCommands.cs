@@ -40,5 +40,35 @@ namespace AdventurerClientDotNet.Core
         /// The get Temperature version command.
         /// </summary>
         public const string GetTemperature = "M105";
+
+        /// <summary>
+        /// Turns the LED on or off.
+        /// </summary>
+        public const string ChangeLed = "M146";
+
+        /// <summary>
+        /// Begins Command to manually change axis.
+        /// </summary>
+        public const string StartAxisChange = "M114";
+
+        /// <summary>
+        /// Sends Commands to manually change axis.
+        /// </summary>
+        public const string SendAxisCommands = "G1";
+
+        /// <summary>
+        /// Ends command to manually change axis.
+        /// </summary>
+        public const string EndAxisChange = "M112";
+
+        /// <summary>
+        /// Sets the extruders temperature.
+        /// </summary>
+        public const string SetExtruderTemp = "M104";
+
+        /// <summary>
+        /// Sets the platform temperature.
+        /// </summary>
+        public const string SetPlatformTemp = "M140";
     }
 }
